@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Word Game - ISBA 2417 Cloud Computing{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 0;">Word Puzzle</h2>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <div class="text-center">
+        <div id="game-message" style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: bold; color: #333; min-height: 30px;">
+            Guess the 5-letter word!
+        </div>
+
+        <div id="game-board" style="display: grid; grid-template-rows: repeat(6, 60px); grid-gap: 5px; justify-content: center; margin: 1.5rem 0; max-width: 350px; margin-left: auto; margin-right: auto;">
+            <!-- Row 1 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="0" data-col="0">
+                <input class="letter-box" maxlength="1" data-row="0" data-col="1">
+                <input class="letter-box" maxlength="1" data-row="0" data-col="2">
+                <input class="letter-box" maxlength="1" data-row="0" data-col="3">
+                <input class="letter-box" maxlength="1" data-row="0" data-col="4">
+            </div>
+            <!-- Row 2 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="1" data-col="0" disabled>
+                <input class="letter-box" maxlength="1" data-row="1" data-col="1" disabled>
+                <input class="letter-box" maxlength="1" data-row="1" data-col="2" disabled>
+                <input class="letter-box" maxlength="1" data-row="1" data-col="3" disabled>
+                <input class="letter-box" maxlength="1" data-row="1" data-col="4" disabled>
+            </div>
+            <!-- Row 3 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="2" data-col="0" disabled>
+                <input class="letter-box" maxlength="1" data-row="2" data-col="1" disabled>
+                <input class="letter-box" maxlength="1" data-row="2" data-col="2" disabled>
+                <input class="letter-box" maxlength="1" data-row="2" data-col="3" disabled>
+                <input class="letter-box" maxlength="1" data-row="2" data-col="4" disabled>
+            </div>
+            <!-- Row 4 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="3" data-col="0" disabled>
+                <input class="letter-box" maxlength="1" data-row="3" data-col="1" disabled>
+                <input class="letter-box" maxlength="1" data-row="3" data-col="2" disabled>
+                <input class="letter-box" maxlength="1" data-row="3" data-col="3" disabled>
+                <input class="letter-box" maxlength="1" data-row="3" data-col="4" disabled>
+            </div>
+            <!-- Row 5 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="4" data-col="0" disabled>
+                <input class="letter-box" maxlength="1" data-row="4" data-col="1" disabled>
+                <input class="letter-box" maxlength="1" data-row="4" data-col="2" disabled>
+                <input class="letter-box" maxlength="1" data-row="4" data-col="3" disabled>
+                <input class="letter-box" maxlength="1" data-row="4" data-col="4" disabled>
+            </div>
+            <!-- Row 6 -->
+            <div class="word-row">
+                <input class="letter-box" maxlength="1" data-row="5" data-col="0" disabled>
+                <input class="letter-box" maxlength="1" data-row="5" data-col="1" disabled>
+                <input class="letter-box" maxlength="1" data-row="5" data-col="2" disabled>
+                <input class="letter-box" maxlength="1" data-row="5" data-col="3" disabled>
+                <input class="letter-box" maxlength="1" data-row="5" data-col="4" disabled>
+            </div>
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+            <button id="submit-btn" class="btn" style="margin-right: 10px;">Submit Guess</button>
+            <button id="new-game-btn" class="btn btn-secondary">New Game</button>
+        </div>
+
+        <div id="game-stats" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <div style="font-weight: bold; color: #667eea;">Games Won</div>
+                    <div id="wins-count" style="font-size: 1.5rem;">0</div>
+                </div>
+                <div>
+                    <div style="font-weight: bold; color: #f5576c;">Games Lost</div>
+                    <div id="losses-count" style="font-size: 1.5rem;">0</div>
+                </div>
+                <div>
+                    <div style="font-weight: bold; color: #666;">Win Rate</div>
+                    <div id="win-rate" style="font-size: 1.5rem;">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.word-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.letter-box {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    border: 2px solid #d3d6da;
+    background: white;
+    border-radius: 4px;
+    text-transform: uppercase;
+    color: #333;
+    transition: all 0.2s ease;
+}
+
+.letter-box:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.letter-box:disabled {
+    background: #f8f9fa;
+}
+
+.letter-box.correct {
+    background-color: #6aaa64 !important;
+    border-color: #6aaa64 !important;
+    color: white;
+}
+
+.letter-box.present {
+    background-color: #c9b458 !important;
+    border-color: #c9b458 !important;
+    color: white;
+}
+
+.letter-box.absent {
+    background-color: #787c7e !important;
+    border-color: #787c7e !important;
+    color: white;
+}
+
+.flip-animation {
+    animation: flip 0.6s ease-in-out;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateX(0);
+    }
+    50% {
+        transform: rotateX(90deg);
+    }
+    100% {
+        transform: rotateX(0);
+    }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+</style>
+
+<script>
+class WordGame {
+    constructor() {
+        this.words = [
+            'ABOUT', 'ABOVE', 'ABUSE', 'ACTOR', 'ACUTE', 'ADMIT', 'ADOPT', 'ADULT', 'AFTER', 'AGAIN',
+            'AGENT', 'AGREE', 'AHEAD', 'ALARM', 'ALBUM', 'ALERT', 'ALIEN', 'ALIGN', 'ALIKE', 'ALIVE',
+            'ALLOW', 'ALONE', 'ALONG', 'ALTER', 'AMONG', 'ANGER', 'ANGLE', 'ANGRY', 'APART', 'APPLE',
+            'APPLY', 'ARENA', 'ARGUE', 'ARISE', 'ARRAY', 'ASIDE', 'ASSET', 'AVOID', 'AWAKE', 'AWARD',
+            'AWARE', 'BADLY', 'BAKER', 'BASES', 'BASIC', 'BEACH', 'BEGAN', 'BEGIN', 'BEING', 'BELOW',
+            'BENCH', 'BILLY', 'BIRTH', 'BLACK', 'BLAME', 'BLIND', 'BLOCK', 'BLOOD', 'BOARD', 'BOOST',
+            'BOOTH', 'BOUND', 'BRAIN', 'BRAND', 'BREAD', 'BREAK', 'BREED', 'BRIEF', 'BRING', 'BROAD',
+            'BROKE', 'BROWN', 'BUILD', 'BUILT', 'BUYER', 'CABLE', 'CATCH', 'CAUSE', 'CHAIN', 'CHAIR',
+            'CHAOS', 'CHARM', 'CHART', 'CHASE', 'CHEAP', 'CHECK', 'CHEST', 'CHILD', 'CHINA', 'CHOSE',
+            'CIVIL', 'CLAIM', 'CLASS', 'CLEAN', 'CLEAR', 'CLICK', 'CLOCK', 'CLOSE', 'CLOUD', 'COACH'
+        ];
+        
+        this.currentWord = this.getRandomWord();
+        this.currentRow = 0;
+        this.currentCol = 0;
+        this.gameOver = false;
+        this.stats = this.loadStats();
+        
+        this.initializeGame();
+        this.updateStatsDisplay();
+    }
+
+    getRandomWord() {
+        return this.words[Math.floor(Math.random() * this.words.length)];
+    }
+
+    initializeGame() {
+        // Add event listeners
+        document.getElementById('submit-btn').addEventListener('click', () => this.submitGuess());
+        document.getElementById('new-game-btn').addEventListener('click', () => this.newGame());
+        
+        // Add keyboard event listeners
+        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        
+        // Add input event listeners
+        const letterBoxes = document.querySelectorAll('.letter-box');
+        letterBoxes.forEach(box => {
+            box.addEventListener('input', (e) => this.handleInput(e));
+            box.addEventListener('keydown', (e) => this.handleBoxKeyDown(e));
+        });
+    }
+
+    handleKeyPress(e) {
+        if (this.gameOver) return;
+        
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.submitGuess();
+        } else if (e.key === 'Backspace' && !e.target.classList.contains('letter-box')) {
+            // Only handle backspace if not focused on a letter box
+            this.handleBackspace();
+        } else if (e.key.match(/[a-zA-Z]/) && e.key.length === 1 && !e.target.classList.contains('letter-box')) {
+            // Only handle letter input if not focused on a letter box
+            this.handleLetter(e.key.toUpperCase());
+        }
+    }
+
+    handleInput(e) {
+        const letter = e.target.value.toUpperCase();
+        if (letter.match(/[A-Z]/)) {
+            e.target.value = letter;
+            this.moveToNext();
+        } else {
+            e.target.value = '';
+        }
+    }
+
+    handleBoxKeyDown(e) {
+        if (e.key === 'Backspace' && e.target.value === '') {
+            this.moveToPrevious();
+        }
+    }
+
+    handleLetter(letter) {
+        if (this.currentCol < 5) {
+            const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`);
+            box.value = letter;
+            this.moveToNext();
+        }
+    }
+
+    handleBackspace() {
+        if (this.currentCol > 0) {
+            this.moveToPrevious();
+            const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`);
+            box.value = '';
+        }
+    }
+
+    moveToNext() {
+        if (this.currentCol < 4) {
+            this.currentCol++;
+            this.focusCurrentBox();
+        }
+    }
+
+    moveToPrevious() {
+        if (this.currentCol > 0) {
+            this.currentCol--;
+            this.focusCurrentBox();
+        }
+    }
+
+    focusCurrentBox() {
+        const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`);
+        if (box && !box.disabled) {
+            box.focus();
+        }
+    }
+
+    submitGuess() {
+        if (this.gameOver) return;
+        
+        const guess = this.getCurrentGuess();
+        if (guess.length !== 5) {
+            this.showMessage('Please enter a 5-letter word!', 'error');
+            this.shakeRow();
+            return;
+        }
+
+        this.checkGuess(guess);
+        
+        if (guess === this.currentWord) {
+            this.gameOver = true;
+            this.showMessage('🎉 Congratulations! You won!', 'success');
+            this.stats.wins++;
+            this.saveStats();
+            this.updateStatsDisplay();
+        } else if (this.currentRow === 5) {
+            this.gameOver = true;
+            this.showMessage(`Game over! The word was: ${this.currentWord}`, 'error');
+            this.stats.losses++;
+            this.saveStats();
+            this.updateStatsDisplay();
+        } else {
+            this.currentRow++;
+            this.currentCol = 0;
+            this.enableNextRow();
+            this.focusCurrentBox();
+        }
+    }
+
+    getCurrentGuess() {
+        let guess = '';
+        for (let col = 0; col < 5; col++) {
+            const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${col}"]`);
+            guess += box.value || '';
+        }
+        return guess;
+    }
+
+    checkGuess(guess) {
+        const wordArray = this.currentWord.split('');
+        const guessArray = guess.split('');
+        
+        // First pass: mark correct letters
+        for (let i = 0; i < 5; i++) {
+            const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${i}"]`);
+            if (guessArray[i] === wordArray[i]) {
+                setTimeout(() => {
+                    box.classList.add('flip-animation', 'correct');
+                }, i * 100);
+                wordArray[i] = null; // Mark as used
+                guessArray[i] = null; // Mark as processed
+            }
+        }
+        
+        // Second pass: mark present letters
+        for (let i = 0; i < 5; i++) {
+            if (guessArray[i] !== null) {
+                const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${i}"]`);
+                const letterIndex = wordArray.indexOf(guessArray[i]);
+                
+                if (letterIndex !== -1) {
+                    setTimeout(() => {
+                        box.classList.add('flip-animation', 'present');
+                    }, i * 100);
+                    wordArray[letterIndex] = null; // Mark as used
+                } else {
+                    setTimeout(() => {
+                        box.classList.add('flip-animation', 'absent');
+                    }, i * 100);
+                }
+            }
+        }
+        
+        // Disable current row
+        for (let col = 0; col < 5; col++) {
+            const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${col}"]`);
+            box.disabled = true;
+        }
+    }
+
+    enableNextRow() {
+        if (this.currentRow < 6) {
+            for (let col = 0; col < 5; col++) {
+                const box = document.querySelector(`[data-row="${this.currentRow}"][data-col="${col}"]`);
+                box.disabled = false;
+            }
+        }
+    }
+
+    shakeRow() {
+        const row = document.querySelector(`[data-row="${this.currentRow}"]`).parentElement;
+        row.classList.add('shake');
+        setTimeout(() => row.classList.remove('shake'), 500);
+    }
+
+    showMessage(text, type = 'info') {
+        const messageEl = document.getElementById('game-message');
+        messageEl.textContent = text;
+        messageEl.style.color = type === 'success' ? '#6aaa64' : type === 'error' ? '#f5576c' : '#333';
+    }
+
+    newGame() {
+        this.currentWord = this.getRandomWord();
+        this.currentRow = 0;
+        this.currentCol = 0;
+        this.gameOver = false;
+        
+        // Reset all boxes
+        const letterBoxes = document.querySelectorAll('.letter-box');
+        letterBoxes.forEach((box, index) => {
+            box.value = '';
+            box.classList.remove('correct', 'present', 'absent', 'flip-animation');
+            box.disabled = Math.floor(index / 5) !== 0; // Enable only first row
+        });
+        
+        this.showMessage('Guess the 5-letter word!');
+        this.focusCurrentBox();
+    }
+
+    loadStats() {
+        const cookies = document.cookie.split(';');
+        const statsCookie = cookies.find(cookie => cookie.trim().startsWith('word_game_stats='));
+        
+        if (statsCookie) {
+            try {
+                return JSON.parse(statsCookie.split('=')[1]);
+            } catch (e) {
+                return { wins: 0, losses: 0 };
+            }
+        }
+        return { wins: 0, losses: 0 };
+    }
+
+    saveStats() {
+        document.cookie = `word_game_stats=${JSON.stringify(this.stats)}; path=/; max-age=31536000`;
+    }
+
+    updateStatsDisplay() {
+        document.getElementById('wins-count').textContent = this.stats.wins;
+        document.getElementById('losses-count').textContent = this.stats.losses;
+        
+        const total = this.stats.wins + this.stats.losses;
+        const winRate = total > 0 ? Math.round((this.stats.wins / total) * 100) : 0;
+        document.getElementById('win-rate').textContent = `${winRate}%`;
+    }
+}
+
+// Start the game when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new WordGame();
+});
+</script>
+{% endblock %}

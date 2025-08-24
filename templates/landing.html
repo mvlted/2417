@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to My App{% endblock %}
+
+{% block content %}
+<div class="card hero-card">
+    <h1>Welcome!</h1>
+    <p class="subtitle">Check out some of the things this site can do by signing in</p>
+    <p style="font-size: 0.9rem; color: #888; margin-bottom: 2rem;">Thanks for visiting -Tim Malueg</p>
+
+    <div>
+        <a href="{{ url_for('register') }}" class="btn">Get Started</a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary">Sign In</a>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature">
+        <div class="feature-icon">🚀</div>
+        <h3>Flask</h3>
+        <p>I <3 Python</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>Secure</h3>
+        <p>Sweet back end database</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">💡</div>
+        <h3>HTML</h3>
+        <p>Lightweight fun games</p>
+    </div>
+
+    <div class="feature">
+        <div class="feature-icon">🌟</div>
+        <h3>Sign in</h3>
+        <p>Give the login a try!</p>
+    </div>
+</div>
+
+
+{% endblock %}

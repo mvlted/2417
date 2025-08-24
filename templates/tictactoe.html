@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Tic Tac Toe - ISBA 2417 Cloud Computing{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 0;">Tic Tac Toe</h2>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+    
+    <!-- Leaderboard -->
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h4 style="margin-bottom: 0.5rem; text-align: center; color: #333;">&#127942; Leaderboard - Most Wins</h4>
+        {% if leaderboard %}
+            <div style="display: flex; justify-content: center;">
+                <ol style="margin: 0; padding-left: 1.5rem;">
+                    {% for username, wins in leaderboard %}
+                        <li style="margin-bottom: 0.25rem;">
+                            <strong>{{ username }}</strong>: {{ wins }} win{{ 's' if wins != 1 else '' }}
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; margin: 0;">No wins recorded yet. Be the first to win!</p>
+        {% endif %}
+    </div>
+
+    <div class="text-center">
+        <div id="game-status" style="margin-bottom: 1rem; font-size: 1.2rem; font-weight: bold; color: #333;">
+            Your turn! You are X
+        </div>
+
+        <div id="game-board" style="display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 5px; justify-content: center; margin: 2rem 0;">
+            <button class="cell" data-index="0"></button>
+            <button class="cell" data-index="1"></button>
+            <button class="cell" data-index="2"></button>
+            <button class="cell" data-index="3"></button>
+            <button class="cell" data-index="4"></button>
+            <button class="cell" data-index="5"></button>
+            <button class="cell" data-index="6"></button>
+            <button class="cell" data-index="7"></button>
+            <button class="cell" data-index="8"></button>
+        </div>
+
+        <button id="reset-btn" class="btn" style="margin-top: 1rem;">New Game</button>
+        <button id="reset-scores-btn" class="btn btn-secondary" style="margin-top: 0.5rem; padding: 6px 15px; font-size: 0.8rem;">Reset Scores</button>
+
+        <div id="score-board" style="margin-top: 2rem; display: flex; justify-content: space-around; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+            <div>
+                <div style="font-weight: bold; color: #667eea;">You (X)</div>
+                <div id="player-score" style="font-size: 1.5rem;">0</div>
+            </div>
+            <div>
+                <div style="font-weight: bold; color: #666;">Ties</div>
+                <div id="tie-score" style="font-size: 1.5rem;">0</div>
+            </div>
+            <div>
+                <div style="font-weight: bold; color: #f5576c;">Computer (O)</div>
+                <div id="computer-score" style="font-size: 1.5rem;">0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cell {
+    width: 100px;
+    height: 100px;
+    font-size: 2rem;
+    font-weight: bold;
+    border: 2px solid #667eea;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cell:hover {
+    background: #f0f8ff;
+    transform: scale(1.05);
+}
+
+.cell:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.cell.x {
+    color: #667eea;
+}
+
+.cell.o {
+    color: #f5576c;
+}
+
+.winning-cell {
+    background: #90EE90 !important;
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+</style>
+
+<script>
+class TicTacToe {
+    constructor() {
+        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.currentPlayer = 'X';
+        this.gameActive = true;
+        this.scores = { player: 0, computer: 0, ties: 0 };
+        this.gamesPlayed = 0;
+        this.easyModeActive = true;
+
+        this.cells = document.querySelectorAll('.cell');
+        this.statusElement = document.getElementById('game-status');
+        this.resetButton = document.getElementById('reset-btn');
+
+        this.initializeGame();
+    }
+
+    initializeGame() {
+        this.cells.forEach((cell, index) => {
+            cell.addEventListener('click', () => this.handleCellClick(index));
+        });
+
+        this.resetButton.addEventListener('click', () => this.resetGame());
+
+        // Add reset scores button functionality
+        document.getElementById('reset-scores-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all scores?')) {
+                this.resetScores();
+            }
+        });
+
+        this.loadScores();
+        this.loadGameCount();
+        this.updateScoreDisplay();
+        this.checkEasyMode();
+    }
+
+    handleCellClick(index) {
+        if (this.board[index] !== '' || !this.gameActive || this.currentPlayer !== 'X') {
+            return;
+        }
+
+        this.makeMove(index, 'X');
+
+        if (this.gameActive) {
+            setTimeout(() => this.computerMove(), 500);
+        }
+    }
+
+    makeMove(index, player) {
+        this.board[index] = player;
+        this.cells[index].textContent = player;
+        this.cells[index].classList.add(player.toLowerCase());
+
+        if (this.checkWinner()) {
+            this.gameActive = false;
+            this.highlightWinningCells();
+
+            if (player === 'X') {
+                this.statusElement.innerHTML = 'You win! &#127881;';
+                this.scores.player++;
+            } else {
+                this.statusElement.innerHTML = 'Computer wins! &#128542;';
+                this.scores.computer++;
+            }
+
+            this.endGame();
+        } else if (this.board.every(cell => cell !== '')) {
+            this.gameActive = false;
+            this.statusElement.innerHTML = "It's a tie! &#129309;";
+            this.scores.ties++;
+            this.endGame();
+        } else {
+            this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+            this.statusElement.textContent = this.currentPlayer === 'X' ? 'Your turn!' : 'Computer thinking...';
+        }
+    }
+
+    endGame() {
+        this.gamesPlayed++;
+
+        // Determine the result and update database
+        let result = '';
+        if (this.statusElement.innerHTML.includes('You win!')) {
+            result = 'win';
+        } else if (this.statusElement.innerHTML.includes('Computer wins!')) {
+            result = 'loss';
+        } else if (this.statusElement.innerHTML.includes('tie')) {
+            result = 'tie';
+        }
+
+        // Update database with game result
+        if (result) {
+            this.updateGameStats(result);
+        }
+
+        this.saveScores();
+        this.saveGameCount();
+        this.updateScoreDisplay();
+
+        // Check if we just finished the 3rd game (transition from easy to hard)
+        if (this.gamesPlayed === 3 && this.easyModeActive) {
+            setTimeout(() => {
+                this.easyModeActive = false;
+                this.statusElement.innerHTML = '&#129302; Okay, enough playing around...<br><small>Computer difficulty increased!</small>';
+                this.statusElement.style.color = '#f5576c';
+                this.statusElement.style.fontSize = '1.3rem';
+
+                setTimeout(() => {
+                    this.statusElement.style.color = '#333';
+                    this.statusElement.style.fontSize = '1.2rem';
+                }, 3000);
+            }, 1500);
+        }
+    }
+
+    async updateGameStats(result) {
+        try {
+            const response = await fetch('{{ url_for("update_game_stats") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ result: result })
+            });
+
+            if (response.ok) {
+                // Refresh the page to update leaderboard
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Failed to update game stats:', error);
+        }
+    }
+
+    computerMove() {
+        if (!this.gameActive) return;
+
+        if (this.easyModeActive && this.gamesPlayed < 3) {
+            this.easyComputerMove();
+        } else {
+            this.smartComputerMove();
+        }
+    }
+
+    easyComputerMove() {
+        // Intentionally bad AI - mostly random moves
+        // Only 20% chance to block winning moves, never tries to win
+
+        // 20% chance to block player from winning (still pretty bad)
+        if (Math.random() < 0.2) {
+            const blockMove = this.findWinningMove('X');
+            if (blockMove !== -1) {
+                this.makeMove(blockMove, 'O');
+                return;
+            }
+        }
+
+        // 80% of the time (or if no blocking needed), make a random move
+        const availableMoves = this.board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+        if (availableMoves.length > 0) {
+            const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            this.makeMove(randomMove, 'O');
+        }
+    }
+
+    smartComputerMove() {
+        // Original smart AI logic
+
+        // Try to win
+        let move = this.findWinningMove('O');
+        if (move !== -1) {
+            this.makeMove(move, 'O');
+            return;
+        }
+
+        // Try to block player from winning
+        move = this.findWinningMove('X');
+        if (move !== -1) {
+            this.makeMove(move, 'O');
+            return;
+        }
+
+        // Take center if available
+        if (this.board[4] === '') {
+            this.makeMove(4, 'O');
+            return;
+        }
+
+        // Take a corner
+        const corners = [0, 2, 6, 8];
+        const availableCorners = corners.filter(i => this.board[i] === '');
+        if (availableCorners.length > 0) {
+            const randomCorner = availableCorners[Math.floor(Math.random() * availableCorners.length)];
+            this.makeMove(randomCorner, 'O');
+            return;
+        }
+
+        // Take any available spot
+        const availableMoves = this.board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+        if (availableMoves.length > 0) {
+            const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            this.makeMove(randomMove, 'O');
+        }
+    }
+
+    findWinningMove(player) {
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6] // diagonals
+        ];
+
+        for (let pattern of winPatterns) {
+            const [a, b, c] = pattern;
+            const cells = [this.board[a], this.board[b], this.board[c]];
+            const playerCount = cells.filter(cell => cell === player).length;
+            const emptyCount = cells.filter(cell => cell === '').length;
+
+            if (playerCount === 2 && emptyCount === 1) {
+                return pattern[cells.indexOf('')];
+            }
+        }
+
+        return -1;
+    }
+
+    checkWinner() {
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6] // diagonals
+        ];
+
+        for (let pattern of winPatterns) {
+            const [a, b, c] = pattern;
+            if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                this.winningPattern = pattern;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    highlightWinningCells() {
+        if (this.winningPattern) {
+            this.winningPattern.forEach(index => {
+                this.cells[index].classList.add('winning-cell');
+            });
+        }
+    }
+
+    resetGame() {
+        this.board = ['', '', '', '', '', '', '', '', ''];
+        this.currentPlayer = 'X';
+        this.gameActive = true;
+        this.winningPattern = null;
+
+        this.cells.forEach(cell => {
+            cell.textContent = '';
+            cell.classList.remove('x', 'o', 'winning-cell');
+        });
+
+        this.statusElement.textContent = 'Your turn! You are X';
+    }
+
+    checkEasyMode() {
+        // Function kept for compatibility but no longer shows easy mode message
+    }
+
+    resetScores() {
+        this.scores = { player: 0, computer: 0, ties: 0 };
+        this.gamesPlayed = 0;
+        this.easyModeActive = true;
+
+        // Clear cookies
+        document.cookie = 'tictactoe_scores=; path=/; max-age=0';
+        document.cookie = 'tictactoe_games=; path=/; max-age=0';
+
+        this.updateScoreDisplay();
+        this.statusElement.textContent = 'Scores reset! Your turn! You are X';
+    }
+
+    saveScores() {
+        const scores = JSON.stringify(this.scores);
+        document.cookie = `tictactoe_scores=${scores}; path=/; max-age=31536000`;
+    }
+
+    loadScores() {
+        const cookies = document.cookie.split(';');
+        const scoreCookie = cookies.find(cookie => cookie.trim().startsWith('tictactoe_scores='));
+
+        if (scoreCookie) {
+            try {
+                const scoresJson = scoreCookie.split('=')[1];
+                this.scores = JSON.parse(scoresJson);
+            } catch (e) {
+                this.scores = { player: 0, computer: 0, ties: 0 };
+            }
+        }
+    }
+
+    saveGameCount() {
+        document.cookie = `tictactoe_games=${this.gamesPlayed}; path=/; max-age=31536000`;
+    }
+
+    loadGameCount() {
+        const cookies = document.cookie.split(';');
+        const gamesCookie = cookies.find(cookie => cookie.trim().startsWith('tictactoe_games='));
+
+        if (gamesCookie) {
+            try {
+                this.gamesPlayed = parseInt(gamesCookie.split('=')[1]) || 0;
+                this.easyModeActive = this.gamesPlayed < 3;
+            } catch (e) {
+                this.gamesPlayed = 0;
+                this.easyModeActive = true;
+            }
+        }
+    }
+    
+    updateScoreDisplay() {
+        document.getElementById('player-score').textContent = this.scores.player;
+        document.getElementById('computer-score').textContent = this.scores.computer;
+        document.getElementById('tie-score').textContent = this.scores.ties;
+    }
+}
+
+// Start the game when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new TicTacToe();
+});
+</script>
+{% endblock %}

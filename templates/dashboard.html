@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ISBA 2417 Cloud Computing{% endblock %}
+
+{% block content %}
+<div class="card dashboard-card">
+    <h2>Welcome, {{ username }}!</h2>
+    <p class="text-center">Choose an application below to get started.</p>
+
+    <div class="features">
+        <div class="feature">
+            <a href="{{ url_for('notepad') }}" style="text-decoration: none; color: inherit;">
+                <div class="feature-icon">&#128221;</div>
+                <h4>My Notepad</h4>
+                <p>Write and save your personal notes</p>
+            </a>
+        </div>
+
+        <div class="feature">
+            <a href="{{ url_for('tictactoe') }}" style="text-decoration: none; color: inherit;">
+                <div class="feature-icon">&#127918;</div>
+                <h4>Tic Tac Toe</h4>
+                <p>Play a classic game against the computer</p>
+            </a>
+        </div>
+
+        <div class="feature">
+            <a href="{{ url_for('wordgame') }}" style="text-decoration: none; color: inherit;">
+                <div class="feature-icon">&#129513;</div>
+                <h4>Word Puzzle</h4>
+                <p>Guess the 5-letter word in 6 tries</p>
+            </a>
+        </div>
+
+        <div class="feature">
+            <a href="https://www.linkedin.com/in/timmalueg" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+                <div class="feature-icon">&#128188;</div>
+                <h4>LinkedIn Profile</h4>
+                <p>Connect with me on LinkedIn</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+</div>
+{% endblock %}
